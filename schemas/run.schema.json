@@ -29,32 +29,7 @@
       "additionalProperties": false
     },
     "Goal": {
-      "type": "object",
-      "properties": {
-        "版": {
-          "type": "string",
-          "minLength": 1
-        },
-        "課題": {
-          "type": "string",
-          "minLength": 1
-        },
-        "対象": {
-          "type": "string",
-          "minLength": 1
-        },
-        "成功条件": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
-      "required": [
-        "版",
-        "課題",
-        "対象",
-        "成功条件"
-      ],
-      "additionalProperties": false
+      "$ref": "#/$defs/Goal"
     },
     "Context": {
       "type": "object",
@@ -112,37 +87,7 @@
       "additionalProperties": false
     },
     "合意": {
-      "type": "object",
-      "properties": {
-        "版": {
-          "type": "string",
-          "minLength": 1
-        },
-        "承認者": {
-          "type": "string",
-          "minLength": 1
-        },
-        "権限": {
-          "type": "string",
-          "minLength": 1
-        },
-        "上限": {
-          "type": "string",
-          "minLength": 1
-        },
-        "期限": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "版",
-        "承認者",
-        "権限",
-        "上限",
-        "期限"
-      ],
-      "additionalProperties": false
+      "$ref": "#/$defs/合意"
     },
     "測定": {
       "type": "object",
@@ -1010,6 +955,18 @@
         ],
         "additionalProperties": false
       }
+    },
+    "旧Goal": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Goal"
+      }
+    },
+    "旧合意": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/合意"
+      }
     }
   },
   "required": [
@@ -1030,5 +987,68 @@
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Software Foundation 実行記録",
-  "description": "開始判定から継続運用までの記録。開始前の聞き取りは準備メモとして別途保持する。"
+  "description": "開始判定から継続運用までの記録。開始前の聞き取りは準備メモとして別途保持する。",
+  "$defs": {
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "課題": {
+          "type": "string",
+          "minLength": 1
+        },
+        "対象": {
+          "type": "string",
+          "minLength": 1
+        },
+        "成功条件": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "版",
+        "課題",
+        "対象",
+        "成功条件"
+      ],
+      "additionalProperties": false
+    },
+    "合意": {
+      "type": "object",
+      "properties": {
+        "版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "承認者": {
+          "type": "string",
+          "minLength": 1
+        },
+        "権限": {
+          "type": "string",
+          "minLength": 1
+        },
+        "上限": {
+          "type": "string",
+          "minLength": 1
+        },
+        "期限": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "版",
+        "承認者",
+        "権限",
+        "上限",
+        "期限"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

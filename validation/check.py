@@ -24,6 +24,20 @@ def check_contract():
         schema, format_checker=Draft202012Validator.FORMAT_CHECKER
     )
     validator.validate(run)
+    revised = copy.deepcopy(run)
+    for name in ("Goal", "合意"):
+        revised["旧" + name] = [copy.deepcopy(revised[name])]
+        revised[name]["版"] += "-更新"
+        revised["引継ぎ"][name + "版"] = revised[name]["版"]
+    validator.validate(revised)
+    check_history(revised)
+    for name in ("Goal", "合意"):
+        missing = copy.deepcopy(revised)
+        del missing["旧" + name]
+        expect_invalid_history(missing, f"判断の{name}版が存在しない")
+        duplicate = copy.deepcopy(revised)
+        duplicate["旧" + name].append(duplicate[name])
+        expect_invalid_history(duplicate, f"{name}版が重複")
     invalid = copy.deepcopy(run)
     invalid["判断"][0]["状態"] = "実行可"
     errors = validator.iter_errors(invalid)
@@ -44,11 +58,14 @@ def check_contract():
 def check_history(run):
     history = run["履歴"]
     evidence_ids = {record["ID"] for record in run["証拠"]}
-    context_versions = {record["版"] for record in [run["Context"], *run["旧Context"]]}
+    versions = {}
+    for name in ("Goal", "Context", "合意"):
+        records = [run[name], *run.get("旧" + name, [])]
+        versions[name] = {record["版"] for record in records}
+        assert len(versions[name]) == len(records), f"{name}版が重複"
     decision_ids = {decision["ID"] for decision in run["判断"]}
     assert len(evidence_ids) == len(run["証拠"]), "証拠IDが重複"
     assert len(decision_ids) == len(run["判断"]), "判断IDが重複"
-    assert len(context_versions) == 1 + len(run["旧Context"]), "Context版が重複"
     assert history[0]["前"] == "準備" and history[-1]["後"] == run["現在"]
     for previous, following in zip(history, history[1:]):
         assert previous["後"] == following["前"]
@@ -59,9 +76,8 @@ def check_history(run):
         options = {option["ID"] for option in decision["候補"]}
         assert len(options) == len(decision["候補"]), "候補IDが重複"
         assert decision["採用"] in options
-        assert decision["Context版"] in context_versions
-        assert decision["Goal版"] == run["Goal"]["版"]
-        assert decision["合意版"] == run["合意"]["版"]
+        for name, known in versions.items():
+            assert decision[name + "版"] in known, f"判断の{name}版が存在しない"
         for review_name in ("独立レビュー", "Context付きレビュー"):
             assert set(decision[review_name]["根拠"]) <= evidence_ids, "レビューの根拠が存在しない"
     for record in ("Goal", "Context", "合意"):
