@@ -112,7 +112,13 @@ def check_execution_authorization(run):
         assert decision is not None, "実行の判断IDが存在しない"
         assert decision["状態"] == "実行可", "実行可の判断がない"
         timestamp = parse_time(event["時刻"])
-        assert timestamp <= parse_time(agreements[decision["合意版"]]["期限"]), "実行時に合意が期限切れ"
+        agreement = agreements[decision["合意版"]]
+        expires = parse_time(agreement["期限"])
+        if "発効" in agreement:
+            effective = parse_time(agreement["発効"])
+            assert effective <= expires, "合意の発効が期限より後"
+            assert effective <= timestamp, "実行時に合意が未発効"
+        assert timestamp <= expires, "実行時に合意が期限切れ"
         plan = plans.get(decision.get("測定版"))
         assert plan is not None, "実行判断の測定版が存在しない"
         assert parse_time(plan["事前確定"]) <= timestamp, "測定計画が実行後に確定"
@@ -184,11 +190,22 @@ def check_execution_counterexamples():
     expect_invalid_history(run, "実行時点で参照できる資料・実測がない")
     evidence["取得"] = event["時刻"]
     check_history(run)
+    agreement = run["合意"]
+    agreement["期限"] = "2026-11-02T00:00:00Z"
+    agreement["発効"] = "2026-11-01T12:00:01Z"
+    expect_invalid_history(run, "実行時に合意が未発効")
+    agreement["発効"] = "2026-11-03T00:00:00Z"
+    expect_invalid_history(run, "合意の発効が期限より後")
+    agreement["発効"] = event["時刻"]
+    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    check_history(run)
+    agreement["期限"] = event["時刻"]
 
     decision["状態"] = "保留"
     expect_invalid_history(run, "実行可の判断がない")
     decision["状態"] = "実行可"
     run["合意"]["期限"] = "2026-10-31T23:59:59Z"
+    del agreement["発効"]
     expect_invalid_history(run, "実行時に合意が期限切れ")
     run["合意"]["期限"] = event["時刻"]
     run["測定"]["事前確定"] = "2026-11-02T00:00:00Z"
