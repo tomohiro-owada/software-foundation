@@ -143,7 +143,11 @@ def check_execution_authorization(run):
 
 
 def parse_time(value):
-    return datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
+    instant = datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
+    fraction = re.search(r"\.([0-9]+)", value)
+    # datetime が保持できる6桁より後も、同じ時刻の比較に使う。
+    remaining = fraction[1][6:].rstrip("0") if fraction else ""
+    return instant, remaining
 
 
 def check_history_counterexamples():
@@ -261,6 +265,13 @@ def check_execution_counterexamples():
     Draft202012Validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
 
+    agreement["期限"] = "2026-11-01T12:00:00.0000001Z"
+    event["時刻"] = "2026-11-01T14:00:00.000000100+02:00"
+    check_history(run)
+    event["時刻"] = "2026-11-01T14:00:00.00000011+02:00"
+    expect_invalid_history(run, "実行時に合意が期限切れ")
+    event["時刻"] = "2026-11-01T12:00:00Z"
+    agreement["期限"] = event["時刻"]
     agreement["撤回"] = "2026-11-01T12:00:01Z"
     Draft202012Validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
