@@ -143,11 +143,17 @@ def check_execution_authorization(run):
 
 
 def parse_time(value):
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
 
 
 def check_history_counterexamples():
     run = load("examples/contract-run.json")
+    run["履歴"][0]["時刻"] = run["履歴"][0]["時刻"].lower()
+    validator = Draft202012Validator(
+        load("schemas/run.schema.json"), format_checker=Draft202012Validator.FORMAT_CHECKER
+    )
+    validator.validate(run)
+    check_history(run)
     run["履歴"][0]["時刻"] = "2026-11-01T13:00:00+02:00"
     check_history(run)
     run["履歴"][0]["時刻"] = "2026-11-01T08:00:00-05:00"
