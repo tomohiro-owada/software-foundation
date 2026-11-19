@@ -298,13 +298,46 @@ def check_documents():
     print("基礎7文書の原文一致と相対リンクを確認")
 
 
+class AmbiguousJSON(ValueError):
+    """仕様の検査を始める前に拒否する入力。"""
+
+
+def unique_members(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise AmbiguousJSON("JSONオブジェクトに重複したキーがある")
+        result[key] = value
+    return result
+
+
+def reject_non_json_number(_constant):
+    raise AmbiguousJSON("JSONで許可されない数値がある")
+
+
+def parse_record(source):
+    return json.loads(
+        source, object_pairs_hook=unique_members, parse_constant=reject_non_json_number
+    )
+
+
+def check_json_counterexamples():
+    assert parse_record('{"版":"A","旧":[{"版":"B"}]}')["版"] == "A"
+    for source in ('{"合意":{"版":"A","版":"B"}}', '{"値":NaN}', '{"値":Infinity}', '{"値":-Infinity}'):
+        try:
+            parse_record(source)
+        except AmbiguousJSON:
+            continue
+        raise AssertionError("曖昧なJSONを受理した")
+
+
 def check_local_record(path):
     schema = load("schemas/run.schema.json")
     validator = Draft202012Validator(
         schema, format_checker=Draft202012Validator.FORMAT_CHECKER
     )
     try:
-        record = json.loads(path.read_text(encoding="utf-8"))
+        record = parse_record(path.read_text(encoding="utf-8"))
         validator.validate(record)
         check_history(record)
     except ValidationError as error:
@@ -312,6 +345,8 @@ def check_local_record(path):
         raise SystemExit(f"構造が不適合: {location} ({error.validator})") from None
     except AssertionError as error:
         raise SystemExit(f"履歴または参照が不適合: {error or '状態・版・根拠を確認'}") from None
+    except AmbiguousJSON as error:
+        raise SystemExit(f"JSONが不適合: {error}") from None
     except (OSError, ValueError) as error:
         raise SystemExit(f"記録の読み取りまたは解析に失敗: {type(error).__name__}") from None
     print("実行記録の構造と自動検査の対象となる条件を確認")
@@ -323,6 +358,7 @@ if __name__ == "__main__":
     record_path = parser.parse_args().記録
     if record_path is None:
         check_contract()
+        check_json_counterexamples()
         check_history_counterexamples()
         check_execution_counterexamples()
         check_exception_transitions()
