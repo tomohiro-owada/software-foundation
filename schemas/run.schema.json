@@ -90,42 +90,7 @@
       "$ref": "#/$defs/合意"
     },
     "測定": {
-      "type": "object",
-      "properties": {
-        "事前確定": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "基準": {
-          "type": "string",
-          "minLength": 1
-        },
-        "方法": {
-          "type": "string",
-          "minLength": 1
-        },
-        "期間": {
-          "type": "string",
-          "minLength": 1
-        },
-        "撤退": {
-          "type": "string",
-          "minLength": 1
-        },
-        "反実仮想": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
-      "required": [
-        "事前確定",
-        "基準",
-        "方法",
-        "期間",
-        "撤退",
-        "反実仮想"
-      ],
-      "additionalProperties": false
+      "$ref": "#/$defs/測定"
     },
     "判断": {
       "type": "array",
@@ -342,6 +307,10 @@
             "minLength": 1
           },
           "Goalへの寄与": {
+            "type": "string",
+            "minLength": 1
+          },
+          "測定版": {
             "type": "string",
             "minLength": 1
           }
@@ -971,6 +940,21 @@
       "items": {
         "$ref": "#/$defs/合意"
       }
+    },
+    "旧測定": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/測定"
+          },
+          {
+            "required": [
+              "版"
+            ]
+          }
+        ]
+      }
     }
   },
   "required": [
@@ -1051,6 +1035,48 @@
         "権限",
         "上限",
         "期限"
+      ],
+      "additionalProperties": false
+    },
+    "測定": {
+      "type": "object",
+      "properties": {
+        "事前確定": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "基準": {
+          "type": "string",
+          "minLength": 1
+        },
+        "方法": {
+          "type": "string",
+          "minLength": 1
+        },
+        "期間": {
+          "type": "string",
+          "minLength": 1
+        },
+        "撤退": {
+          "type": "string",
+          "minLength": 1
+        },
+        "反実仮想": {
+          "type": "string",
+          "minLength": 1
+        },
+        "版": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "事前確定",
+        "基準",
+        "方法",
+        "期間",
+        "撤退",
+        "反実仮想"
       ],
       "additionalProperties": false
     }

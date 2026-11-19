@@ -95,7 +95,11 @@ def check_history(run):
 def check_execution_authorization(run):
     decisions = {record["ID"]: record for record in run["判断"]}
     agreements = {record["版"]: record for record in [run["合意"], *run.get("旧合意", [])]}
-    measured_from = parse_time(run["測定"]["事前確定"])
+    current_plan = run["測定"]
+    previous_plans = run.get("旧測定", [])
+    assert not previous_plans or "版" in current_plan, "現行の測定版がない"
+    plans = {plan.get("版"): plan for plan in [current_plan, *previous_plans]}
+    assert len(plans) == len(previous_plans) + 1, "測定版が重複"
     operational_evidence = {
         record["ID"]: parse_time(record["取得"])
         for record in run["証拠"]
@@ -109,7 +113,9 @@ def check_execution_authorization(run):
         assert decision["状態"] == "実行可", "実行可の判断がない"
         timestamp = parse_time(event["時刻"])
         assert timestamp <= parse_time(agreements[decision["合意版"]]["期限"]), "実行時に合意が期限切れ"
-        assert measured_from <= timestamp, "測定計画が実行後に確定"
+        plan = plans.get(decision.get("測定版"))
+        assert plan is not None, "実行判断の測定版が存在しない"
+        assert parse_time(plan["事前確定"]) <= timestamp, "測定計画が実行後に確定"
         available = {
             ref for ref, observed in operational_evidence.items() if observed <= timestamp
         }
@@ -206,6 +212,18 @@ def check_execution_counterexamples():
     expect_invalid_history(run, "Context付きレビューの実行時点の根拠がない")
     contextual["根拠"] = [evidence["ID"]]
     check_history(run)
+
+    old_plan = dict(run["測定"], 版="M1")
+    run["旧測定"] = [old_plan]
+    run["測定"].update(版="M2", 事前確定="2026-11-02T00:00:00Z")
+    expect_invalid_history(run, "実行判断の測定版が存在しない")
+    decision["測定版"] = "M2"
+    expect_invalid_history(run, "測定計画が実行後に確定")
+    decision["測定版"] = "M1"
+    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    check_history(run)
+    old_plan["版"] = "M2"
+    expect_invalid_history(run, "測定版が重複")
 
 
 def check_exception_transitions():
