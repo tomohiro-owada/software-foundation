@@ -1027,6 +1027,10 @@
         "期限": {
           "type": "string",
           "format": "date-time"
+        },
+        "発効": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
