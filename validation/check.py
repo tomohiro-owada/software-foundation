@@ -3,6 +3,7 @@ import copy
 import json
 import re
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from statistics import median
 from fractions import Fraction
@@ -35,25 +36,60 @@ def check_contract():
     invalid["履歴"][0]["後"] = "運用"
     assert not validator.is_valid(invalid)
 
+    check_history(run)
+    assert run["区分"] == "模擬"
+    assert all(record["種類"] == "模擬" for record in run["証拠"])
+    print("スキーマ、適合例、拒否例、履歴・参照を確認")
+
+
+def check_history(run):
     history = run["履歴"]
     evidence_ids = {record["ID"] for record in run["証拠"]}
     context_versions = {record["版"] for record in [run["Context"], *run["旧Context"]]}
-    assert len(evidence_ids) == len(run["証拠"])
+    decision_ids = {decision["ID"] for decision in run["判断"]}
+    assert len(evidence_ids) == len(run["証拠"]), "証拠IDが重複"
+    assert len(decision_ids) == len(run["判断"]), "判断IDが重複"
+    assert len(context_versions) == 1 + len(run["旧Context"]), "Context版が重複"
     assert history[0]["前"] == "準備" and history[-1]["後"] == run["現在"]
     for previous, following in zip(history, history[1:]):
         assert previous["後"] == following["前"]
-        assert previous["時刻"] <= following["時刻"]
+        assert parse_time(previous["時刻"]) <= parse_time(following["時刻"]), "履歴が時刻順でない"
     for entry in history + run["判断"]:
         assert set(entry["根拠"]) <= evidence_ids
     for decision in run["判断"]:
-        assert decision["採用"] in {option["ID"] for option in decision["候補"]}
+        options = {option["ID"] for option in decision["候補"]}
+        assert len(options) == len(decision["候補"]), "候補IDが重複"
+        assert decision["採用"] in options
         assert decision["Context版"] in context_versions
         assert decision["Goal版"] == run["Goal"]["版"]
         assert decision["合意版"] == run["合意"]["版"]
     assert run["引継ぎ"]["Context版"] == run["Context"]["版"]
-    assert run["区分"] == "模擬"
-    assert all(record["種類"] == "模擬" for record in run["証拠"])
-    print("スキーマ、適合例、二つの拒否例、履歴・参照を確認")
+
+def parse_time(value):
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def check_history_counterexamples():
+    run = load("examples/business-run.json")
+    run["履歴"][0]["時刻"] = "2026-11-01T13:00:00+02:00"
+    check_history(run)
+    run["履歴"][0]["時刻"] = "2026-11-01T08:00:00-05:00"
+    try:
+        check_history(run)
+    except AssertionError as error:
+        assert str(error) == "履歴が時刻順でない"
+    else:
+        raise AssertionError("時刻逆転を拒否しなかった")
+
+    run = load("examples/business-run.json")
+    run["判断"][0]["候補"][1]["ID"] = run["判断"][0]["候補"][2]["ID"]
+    run["判断"][0]["採用"] = run["判断"][0]["候補"][2]["ID"]
+    try:
+        check_history(run)
+    except AssertionError as error:
+        assert str(error) == "候補IDが重複"
+    else:
+        raise AssertionError("候補IDの重複を拒否しなかった")
 
 
 def check_simulation():
@@ -103,5 +139,6 @@ def check_documents():
 
 if __name__ == "__main__":
     check_contract()
+    check_history_counterexamples()
     check_simulation()
     check_documents()
