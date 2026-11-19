@@ -122,8 +122,10 @@ def check_execution_authorization(run):
         plan = plans.get(decision.get("測定版"))
         assert plan is not None, "実行判断の測定版が存在しない"
         assert parse_time(plan["事前確定"]) <= timestamp, "測定計画が実行後に確定"
+        decision_cutoff = parse_time(decision.get("実行可確定", event["時刻"]))
+        assert decision_cutoff <= timestamp, "判断が実行後に確定"
         available = {
-            ref for ref, observed in operational_evidence.items() if observed <= timestamp
+            ref for ref, observed in operational_evidence.items() if observed <= decision_cutoff
         }
         assert available.intersection(decision["根拠"]), "実行時点で参照できる資料・実測がない"
         if decision["重要"]:
@@ -241,6 +243,14 @@ def check_execution_counterexamples():
     check_history(run)
     old_plan["版"] = "M2"
     expect_invalid_history(run, "測定版が重複")
+    old_plan["版"] = "M1"
+    decision["実行可確定"] = "2026-11-01T12:00:01Z"
+    expect_invalid_history(run, "判断が実行後に確定")
+    decision["実行可確定"] = "2026-11-01T11:59:59Z"
+    expect_invalid_history(run, "実行時点で参照できる資料・実測がない")
+    decision["実行可確定"] = event["時刻"]
+    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    check_history(run)
 
 
 def check_exception_transitions():
