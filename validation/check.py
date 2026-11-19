@@ -8,6 +8,10 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+if not __debug__:
+    raise SystemExit("検証にはアサーションが必要です。Pythonの最適化を無効にしてください。")
+
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "8ad57cf750f7ef905452df1549a4b60736496f1c"
 
