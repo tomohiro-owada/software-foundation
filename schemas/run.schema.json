@@ -1035,6 +1035,10 @@
         "発効": {
           "type": "string",
           "format": "date-time"
+        },
+        "撤回": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
