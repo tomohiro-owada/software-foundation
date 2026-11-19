@@ -496,6 +496,20 @@
           "制約": {
             "type": "string",
             "minLength": 1
+          },
+          "訂正元": {
+            "type": "object",
+            "properties": {
+              "証拠ID": { "type": "string", "minLength": 1 },
+              "項目": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            },
+            "required": ["証拠ID", "項目"],
+            "additionalProperties": false
           }
         },
         "required": [
