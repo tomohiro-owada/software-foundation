@@ -84,6 +84,25 @@ def check_history(run):
         assert run["引継ぎ"][record + "版"] == run[record]["版"], f"引継ぎの{record}版が現行版と異なる"
 
 
+    if run["区分"] == "実運用":
+        check_execution_authorization(run)
+
+
+def check_execution_authorization(run):
+    decisions = {record["ID"]: record for record in run["判断"]}
+    agreements = {record["版"]: record for record in [run["合意"], *run.get("旧合意", [])]}
+    measured_from = parse_time(run["測定"]["事前確定"])
+    for event in run["履歴"]:
+        if event["後"] != "実行":
+            continue
+        decision = decisions.get(event.get("判断ID"))
+        assert decision is not None, "実行の判断IDが存在しない"
+        assert decision["状態"] == "実行可", "実行可の判断がない"
+        timestamp = parse_time(event["時刻"])
+        assert timestamp <= parse_time(agreements[decision["合意版"]]["期限"]), "実行時に合意が期限切れ"
+        assert measured_from <= timestamp, "測定計画が実行後に確定"
+
+
 def parse_time(value):
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
@@ -120,6 +139,28 @@ def expect_invalid_history(run, expected):
         raise AssertionError(f"拒否されるべき履歴が通過: {expected}")
 
 
+def check_execution_counterexamples():
+    run = load("examples/contract-run.json")
+    # 実運用の分岐を通すための合成記録。実行や承認の事実を表さない。
+    run["区分"] = "実運用"
+    decision = run["判断"][0]
+    decision.update(重要=False, 状態="実行可")
+    event = next(entry for entry in run["履歴"] if entry["後"] == "実行")
+    expect_invalid_history(run, "実行の判断IDが存在しない")
+    event["判断ID"] = decision["ID"]
+    run["合意"]["期限"] = event["時刻"]
+    check_history(run)
+
+    decision["状態"] = "保留"
+    expect_invalid_history(run, "実行可の判断がない")
+    decision["状態"] = "実行可"
+    run["合意"]["期限"] = "2026-10-31T23:59:59Z"
+    expect_invalid_history(run, "実行時に合意が期限切れ")
+    run["合意"]["期限"] = event["時刻"]
+    run["測定"]["事前確定"] = "2026-11-02T00:00:00Z"
+    expect_invalid_history(run, "測定計画が実行後に確定")
+
+
 def check_documents():
     original_files = subprocess.check_output(
         ["git", "ls-tree", "--name-only", BASE], cwd=ROOT, text=True
@@ -138,4 +179,5 @@ def check_documents():
 if __name__ == "__main__":
     check_contract()
     check_history_counterexamples()
+    check_execution_counterexamples()
     check_documents()

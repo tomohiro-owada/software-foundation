@@ -536,6 +536,10 @@
             },
             "minItems": 0,
             "uniqueItems": true
+          },
+          "判断ID": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [
