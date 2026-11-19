@@ -161,6 +161,25 @@ def check_execution_counterexamples():
     expect_invalid_history(run, "測定計画が実行後に確定")
 
 
+def check_exception_transitions():
+    schema = load("schemas/run.schema.json")
+    validator = Draft202012Validator(schema["properties"]["履歴"]["items"])
+    template = load("examples/contract-run.json")["履歴"][0]
+    routes = (
+        ("運用", "改善", "調査", "相談待ち", "再開", "調査"),
+        ("実行", "失敗", "相談待ち"),
+        ("実行", "失敗", "実行"),
+        ("検証", "改善", "調査"),
+        ("相談待ち", "中断", "再開", "相談待ち"),
+    )
+    for route in routes:
+        for before, after in zip(route, route[1:]):
+            validator.validate(dict(template, 前=before, 後=after))
+    for before, after in (("運用", "実行"), ("相談待ち", "実行"), ("中断", "実行")):
+        assert not validator.is_valid(dict(template, 前=before, 後=after)), (before, after)
+    print("異常系の復帰経路と、再評価・再開を飛ばす遷移の拒否を確認")
+
+
 def check_documents():
     original_files = subprocess.check_output(
         ["git", "ls-tree", "--name-only", BASE], cwd=ROOT, text=True
@@ -180,4 +199,5 @@ if __name__ == "__main__":
     check_contract()
     check_history_counterexamples()
     check_execution_counterexamples()
+    check_exception_transitions()
     check_documents()
