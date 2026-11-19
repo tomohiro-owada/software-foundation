@@ -313,6 +313,10 @@
           "測定版": {
             "type": "string",
             "minLength": 1
+          },
+          "実行可確定": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
