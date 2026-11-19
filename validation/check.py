@@ -106,10 +106,19 @@ def check_execution_authorization(run):
         timestamp = parse_time(event["時刻"])
         assert timestamp <= parse_time(agreements[decision["合意版"]]["期限"]), "実行時に合意が期限切れ"
         assert measured_from <= timestamp, "測定計画が実行後に確定"
-        assert any(
-            ref in operational_evidence and operational_evidence[ref] <= timestamp
-            for ref in decision["根拠"]
-        ), "実行時点で参照できる資料・実測がない"
+        available = {
+            ref for ref, observed in operational_evidence.items() if observed <= timestamp
+        }
+        assert available.intersection(decision["根拠"]), "実行時点で参照できる資料・実測がない"
+        if decision["重要"]:
+            context_review = decision["Context付きレビュー"]
+            author = run["責任AI"]["企業"].strip().casefold()
+            reviewer = context_review["企業"].strip().casefold()
+            assert author and reviewer and author != reviewer, "Context付きレビューは別企業が必要"
+            for name in ("独立レビュー", "Context付きレビュー"):
+                review = decision[name]
+                assert review["状態"] == "実施", f"{name}が未実施"
+                assert available.intersection(review["根拠"]), f"{name}の実行時点の根拠がない"
 
 
 def parse_time(value):
@@ -174,6 +183,25 @@ def check_execution_counterexamples():
     run["合意"]["期限"] = event["時刻"]
     run["測定"]["事前確定"] = "2026-11-02T00:00:00Z"
     expect_invalid_history(run, "測定計画が実行後に確定")
+
+    run["測定"]["事前確定"] = event["時刻"]
+    decision["重要"] = True
+    independent = decision["独立レビュー"]
+    contextual = decision["Context付きレビュー"]
+    independent.update(状態="実施", 根拠=[evidence["ID"]])
+    contextual.update(状態="実施", 企業=f" {run['責任AI']['企業']} ", 根拠=[evidence["ID"]])
+    expect_invalid_history(run, "Context付きレビューは別企業が必要")
+    contextual["企業"] = "別の検証組織"
+    independent["状態"] = "未実施"
+    expect_invalid_history(run, "独立レビューが未実施")
+    independent["状態"] = "実施"
+    later = copy.deepcopy(evidence)
+    later.update(ID="レビューの事後資料", 取得="2026-11-02T00:00:00Z")
+    run["証拠"].append(later)
+    contextual["根拠"] = [later["ID"]]
+    expect_invalid_history(run, "Context付きレビューの実行時点の根拠がない")
+    contextual["根拠"] = [evidence["ID"]]
+    check_history(run)
 
 
 def check_exception_transitions():
