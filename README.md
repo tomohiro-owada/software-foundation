@@ -1,24 +1,10 @@
-# Software Foundation — 分割版 v0.2
+# Software Foundation
 
-日本語の詳細記録をテーマ別に分割したものです。元の記述は省略せず収録しています。
+既存のAIエージェントが人間のGoalに向けて判断し、結果を検証し、改善を続けるための共通規約です。
 
-- [構想・Goal・/goal](./01-vision-goal.md) — 第1〜3章
-- [Context・非機能要件・リスク](./02-context-risk.md) — 第4〜5章
-- [自律性・報連相・意思決定](./03-autonomy-decisions.md) — 第6〜7章
-- [効果測定・継続運用・外部環境](./04-measurement-operations.md) — 第8〜9章
-- [相互レビュー・進化・既存導入](./05-review-evolution.md) — 第10〜12章
-- [記録・具体例・合意事項・今後](./06-records-examples-roadmap.md) — 第13〜16章
+1. [原則と判断規範](spec/principles.md)を読む。
+2. [実行契約と状態遷移](spec/workflow.md)で現在地と次の行動を決める。
+3. [意思決定・証拠・改善の手順](spec/protocols.md)に従う。
+4. [実行記録スキーマ](schemas/run.schema.json)と[自己検証](examples/validation.md)で記録を点検する。
 
-元文書の冒頭説明：
-
-# Software Foundation — 構想・合意事項・設計論点の詳細記録
-
-**版**：v0.2（日本語・議論保存版）  
-**状態**：構想と合意の記録。実装仕様として確定したものではない。  
-**対象リポジトリ**：https://github.com/tomohiro-owada/software-foundation  
-**目的**：長い対話で確立した思想、判断基準、例、未決事項を、今後のコンテキスト引き継ぎに耐える形で保存する。
-
-> **最重要の構想**：人間が課題・目標・状況を伝え、AIが `/goal` の実行可能性を判断する。実行後は、AIが自律的に調査・設計・実装・検証・運用・改善を継続する。人間は一つ一つの実装判断を指示しない。AIは報告・連絡・相談を行い、必要な合意を得る。評価するのはコードの完成ではなく、最初の課題にどれだけ近づいたかである。
-
----
-
+[基礎7文書](foundations/README.md)は議論・合意・未決事項の原文です。Markdownを判断規範の正本とし、JSON Schemaは実行記録の構造を検査します。実行仕様は人間のレビューに付す提案です。
