@@ -25,13 +25,15 @@ def load(path):
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
+def format_validator(schema):
+    return Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
+
+
 def check_contract():
     schema = load("schemas/run.schema.json")
     run = load("examples/contract-run.json")
     Draft202012Validator.check_schema(schema)
-    validator = Draft202012Validator(
-        schema, format_checker=Draft202012Validator.FORMAT_CHECKER
-    )
+    validator = format_validator(schema)
     validator.validate(run)
     revised = copy.deepcopy(run)
     for name in ("Goal", "合意"):
@@ -58,6 +60,14 @@ def check_contract():
     invalid["履歴"][0]["後"] = "運用"
     assert not validator.is_valid(invalid)
 
+    for invalid_time in ("2026-11-01", "2026-11-01T12:00:00"):
+        invalid = copy.deepcopy(run)
+        invalid["証拠"][0]["取得"] = invalid_time
+        assert any(
+            error.validator == "format" and list(error.path) == ["証拠", 0, "取得"]
+            for error in validator.iter_errors(invalid)
+        ), "日時形式の検査が機能していない"
+
     check_history(run)
     assert run["区分"] == "模擬"
     assert all(record["種類"] == "模擬" for record in run["証拠"])
@@ -79,6 +89,12 @@ def check_history(run):
     for previous, following in zip(history, history[1:]):
         assert previous["後"] == following["前"]
         assert parse_time(previous["時刻"]) <= parse_time(following["時刻"]), "履歴が時刻順でない"
+    for event in history:
+        if "判断ID" in event:
+            assert event["判断ID"] in decision_ids, "履歴の判断IDが存在しない"
+    for agreement in (run["合意"], *run.get("旧合意", [])):
+        if "発効" in agreement:
+            assert parse_time(agreement["発効"]) <= parse_time(agreement["期限"]), "合意の発効が期限より後"
     for entry in history + run["判断"]:
         assert set(entry["根拠"]) <= evidence_ids
     for decision in run["判断"]:
@@ -121,7 +137,6 @@ def check_execution_authorization(run):
         expires = parse_time(agreement["期限"])
         if "発効" in agreement:
             effective = parse_time(agreement["発効"])
-            assert effective <= expires, "合意の発効が期限より後"
             assert effective <= timestamp, "実行時に合意が未発効"
         assert timestamp <= expires, "実行時に合意が期限切れ"
         if "撤回" in agreement:
@@ -157,9 +172,7 @@ def parse_time(value):
 def check_history_counterexamples():
     run = load("examples/contract-run.json")
     run["履歴"][0]["時刻"] = run["履歴"][0]["時刻"].lower()
-    validator = Draft202012Validator(
-        load("schemas/run.schema.json"), format_checker=Draft202012Validator.FORMAT_CHECKER
-    )
+    validator = format_validator(load("schemas/run.schema.json"))
     validator.validate(run)
     check_history(run)
     run["履歴"][0]["時刻"] = "2026-11-01T13:00:00+02:00"
@@ -173,6 +186,17 @@ def check_history_counterexamples():
     expect_invalid_history(run, "候補IDが重複")
 
     original = load("examples/contract-run.json")
+    run = copy.deepcopy(original)
+    run["履歴"][0]["判断ID"] = "存在しない判断"
+    expect_invalid_history(run, "履歴の判断IDが存在しない")
+    run["履歴"][0]["判断ID"] = run["判断"][0]["ID"]
+    check_history(run)
+    invalid_agreement = dict(run["合意"], 発効="2027-01-01T00:00:00Z")
+    run["合意"] = invalid_agreement
+    expect_invalid_history(run, "合意の発効が期限より後")
+    run["合意"] = copy.deepcopy(original["合意"])
+    run["旧合意"] = [dict(invalid_agreement, 版="旧版")]
+    expect_invalid_history(run, "合意の発効が期限より後")
     for record in ("Goal", "Context", "合意"):
         run = copy.deepcopy(original)
         run["引継ぎ"][record + "版"] = "存在しない版"
@@ -216,7 +240,7 @@ def check_execution_counterexamples():
     agreement["発効"] = "2026-11-03T00:00:00Z"
     expect_invalid_history(run, "合意の発効が期限より後")
     agreement["発効"] = event["時刻"]
-    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    format_validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
     agreement["期限"] = event["時刻"]
 
@@ -256,7 +280,7 @@ def check_execution_counterexamples():
     decision["測定版"] = "M2"
     expect_invalid_history(run, "測定計画が実行後に確定")
     decision["測定版"] = "M1"
-    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    format_validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
     old_plan["版"] = "M2"
     expect_invalid_history(run, "測定版が重複")
@@ -266,7 +290,7 @@ def check_execution_counterexamples():
     decision["実行可確定"] = "2026-11-01T11:59:59Z"
     expect_invalid_history(run, "実行時点で参照できる資料・実測がない")
     decision["実行可確定"] = event["時刻"]
-    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    format_validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
 
     agreement["期限"] = "2026-11-01T12:00:00.0000001Z"
@@ -277,7 +301,7 @@ def check_execution_counterexamples():
     event["時刻"] = "2026-11-01T12:00:00Z"
     agreement["期限"] = event["時刻"]
     agreement["撤回"] = "2026-11-01T12:00:01Z"
-    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    format_validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
     agreement["撤回"] = event["時刻"]
     expect_invalid_history(run, "実行時に合意が撤回済み")
@@ -287,7 +311,7 @@ def check_execution_counterexamples():
 
 def check_exception_transitions():
     schema = load("schemas/run.schema.json")
-    validator = Draft202012Validator(schema["properties"]["履歴"]["items"])
+    validator = format_validator(schema["properties"]["履歴"]["items"])
     template = load("examples/contract-run.json")["履歴"][0]
     routes = (
         ("運用", "改善", "調査", "相談待ち", "再開", "調査"),
@@ -354,9 +378,7 @@ def check_json_counterexamples():
 
 def check_local_record(path):
     schema = load("schemas/run.schema.json")
-    validator = Draft202012Validator(
-        schema, format_checker=Draft202012Validator.FORMAT_CHECKER
-    )
+    validator = format_validator(schema)
     try:
         record = parse_record(path.read_text(encoding="utf-8"))
         validator.validate(record)
