@@ -317,6 +317,61 @@
           "実行可確定": {
             "type": "string",
             "format": "date-time"
+          },
+          "評価": {
+            "type": "object",
+            "properties": {
+              "総合判定": {
+                "enum": [
+                  "充足",
+                  "未達",
+                  "未判定"
+                ]
+              },
+              "条件別": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "判定": {
+                      "enum": [
+                        "充足",
+                        "未達",
+                        "未判定"
+                      ]
+                    },
+                    "理由": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "根拠": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uniqueItems": true
+                    }
+                  },
+                  "required": [
+                    "判定",
+                    "理由",
+                    "根拠"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "総合判定",
+              "条件別"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -377,7 +432,12 @@
               }
             }
           }
-        ]
+        ],
+        "dependentRequired": {
+          "評価": [
+            "測定版"
+          ]
+        }
       },
       "minItems": 0
     },
@@ -860,6 +920,69 @@
         "再開条件": {
           "type": "string",
           "minLength": 1
+        },
+        "評価保留": {
+          "type": "object",
+          "properties": {
+            "判断ID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "測定版": {
+              "type": "string",
+              "minLength": 1
+            },
+            "未判定条件": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "必要な証拠": {
+              "type": "string",
+              "minLength": 1
+            },
+            "費用見積もり": {
+              "type": "string",
+              "minLength": 1
+            },
+            "残予算": {
+              "type": "string",
+              "minLength": 1
+            },
+            "暫定措置": {
+              "type": "string",
+              "minLength": 1
+            },
+            "再評価担当": {
+              "type": "string",
+              "minLength": 1
+            },
+            "再開条件": {
+              "type": "string",
+              "minLength": 1
+            },
+            "次回確認": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "判断ID",
+            "測定版",
+            "未判定条件",
+            "必要な証拠",
+            "費用見積もり",
+            "残予算",
+            "暫定措置",
+            "再評価担当",
+            "再開条件",
+            "次回確認"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1080,6 +1203,9 @@
         "版": {
           "type": "string",
           "minLength": 1
+        },
+        "成功条件": {
+          "$ref": "#/$defs/条件組"
         }
       },
       "required": [
@@ -1090,7 +1216,60 @@
         "撤退",
         "反実仮想"
       ],
+      "additionalProperties": false,
+      "dependentRequired": {
+        "成功条件": [
+          "版"
+        ]
+      }
+    },
+    "条件組": {
+      "type": "object",
+      "properties": {
+        "集約": {
+          "enum": [
+            "すべて必須",
+            "いずれかで可"
+          ]
+        },
+        "条件": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/条件または条件組"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "集約",
+        "条件"
+      ],
       "additionalProperties": false
+    },
+    "条件または条件組": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ID": {
+              "type": "string",
+              "minLength": 1
+            },
+            "基準": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "ID",
+            "基準"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/条件組"
+        }
+      ]
     }
   }
 }
