@@ -119,6 +119,8 @@ def check_execution_authorization(run):
             assert effective <= expires, "合意の発効が期限より後"
             assert effective <= timestamp, "実行時に合意が未発効"
         assert timestamp <= expires, "実行時に合意が期限切れ"
+        if "撤回" in agreement:
+            assert timestamp < parse_time(agreement["撤回"]), "実行時に合意が撤回済み"
         plan = plans.get(decision.get("測定版"))
         assert plan is not None, "実行判断の測定版が存在しない"
         assert parse_time(plan["事前確定"]) <= timestamp, "測定計画が実行後に確定"
@@ -251,6 +253,14 @@ def check_execution_counterexamples():
     decision["実行可確定"] = event["時刻"]
     Draft202012Validator(load("schemas/run.schema.json")).validate(run)
     check_history(run)
+
+    agreement["撤回"] = "2026-11-01T12:00:01Z"
+    Draft202012Validator(load("schemas/run.schema.json")).validate(run)
+    check_history(run)
+    agreement["撤回"] = event["時刻"]
+    expect_invalid_history(run, "実行時に合意が撤回済み")
+    agreement["撤回"] = "2026-11-01T11:59:59Z"
+    expect_invalid_history(run, "実行時に合意が撤回済み")
 
 
 def check_exception_transitions():
