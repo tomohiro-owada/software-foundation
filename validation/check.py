@@ -92,6 +92,11 @@ def check_execution_authorization(run):
     decisions = {record["ID"]: record for record in run["判断"]}
     agreements = {record["版"]: record for record in [run["合意"], *run.get("旧合意", [])]}
     measured_from = parse_time(run["測定"]["事前確定"])
+    operational_evidence = {
+        record["ID"]: parse_time(record["取得"])
+        for record in run["証拠"]
+        if record["種類"] in ("資料", "実測")
+    }
     for event in run["履歴"]:
         if event["後"] != "実行":
             continue
@@ -101,6 +106,10 @@ def check_execution_authorization(run):
         timestamp = parse_time(event["時刻"])
         assert timestamp <= parse_time(agreements[decision["合意版"]]["期限"]), "実行時に合意が期限切れ"
         assert measured_from <= timestamp, "測定計画が実行後に確定"
+        assert any(
+            ref in operational_evidence and operational_evidence[ref] <= timestamp
+            for ref in decision["根拠"]
+        ), "実行時点で参照できる資料・実測がない"
 
 
 def parse_time(value):
@@ -149,6 +158,12 @@ def check_execution_counterexamples():
     expect_invalid_history(run, "実行の判断IDが存在しない")
     event["判断ID"] = decision["ID"]
     run["合意"]["期限"] = event["時刻"]
+    expect_invalid_history(run, "実行時点で参照できる資料・実測がない")
+    evidence = next(record for record in run["証拠"] if record["ID"] in decision["根拠"])
+    evidence["種類"] = "資料"
+    evidence["取得"] = "2026-11-02T00:00:00Z"
+    expect_invalid_history(run, "実行時点で参照できる資料・実測がない")
+    evidence["取得"] = event["時刻"]
     check_history(run)
 
     decision["状態"] = "保留"
