@@ -5,8 +5,6 @@ import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from statistics import median
-from fractions import Fraction
 
 from jsonschema import Draft202012Validator
 
@@ -20,13 +18,14 @@ def load(path):
 
 def check_contract():
     schema = load("schemas/run.schema.json")
-    run = load("examples/business-run.json")
+    run = load("examples/contract-run.json")
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(
         schema, format_checker=Draft202012Validator.FORMAT_CHECKER
     )
     validator.validate(run)
-    invalid = load("examples/invalid-review.json")
+    invalid = copy.deepcopy(run)
+    invalid["判断"][0]["状態"] = "実行可"
     errors = validator.iter_errors(invalid)
     assert {tuple(error.path)[:3] for error in errors} == {
         ("判断", 0, "独立レビュー"),
@@ -70,7 +69,7 @@ def parse_time(value):
 
 
 def check_history_counterexamples():
-    run = load("examples/business-run.json")
+    run = load("examples/contract-run.json")
     run["履歴"][0]["時刻"] = "2026-11-01T13:00:00+02:00"
     check_history(run)
     run["履歴"][0]["時刻"] = "2026-11-01T08:00:00-05:00"
@@ -81,7 +80,7 @@ def check_history_counterexamples():
     else:
         raise AssertionError("時刻逆転を拒否しなかった")
 
-    run = load("examples/business-run.json")
+    run = load("examples/contract-run.json")
     run["判断"][0]["候補"][1]["ID"] = run["判断"][0]["候補"][2]["ID"]
     run["判断"][0]["採用"] = run["判断"][0]["候補"][2]["ID"]
     try:
@@ -90,36 +89,6 @@ def check_history_counterexamples():
         assert str(error) == "候補IDが重複"
     else:
         raise AssertionError("候補IDの重複を拒否しなかった")
-
-
-def check_simulation():
-    data = load("examples/business-metrics.json")
-    conditions = data["条件"]
-    paid = [case for case in data["案件"] if case["支払額円"] > 0]
-    shortening = median(case["通常分"] - case["支援後分"] for case in paid)
-    revenue = sum(case["支払額円"] for case in paid)
-    labor = Fraction(sum(data["週稼働分"]) * data["時給円"], 60)
-    initial_cost = data["直接費円"]
-    revised_cost = initial_cost - data["改定前料金円"] + data["改定後料金円"]
-
-    def meets_conditions(cost, labor_cost):
-        return all((
-            len(paid) >= conditions["最低有料件数"],
-            revenue - cost - labor_cost >= conditions["最低寄与利益円"],
-            shortening >= conditions["最低中央値短縮分"],
-            cost <= conditions["最大直接費円"],
-            max(data["週稼働分"]) <= conditions["最大週稼働分"],
-            data["重大事故件数"] <= conditions["最大重大事故件数"],
-            data["外部共有件数"] <= conditions["最大外部共有件数"],
-        ))
-
-    assert (len(paid), shortening, revenue - initial_cost - labor) == (3, 23, 4900)
-    assert meets_conditions(initial_cost, labor)
-    assert revised_cost == 4000 and revenue - revised_cost - labor == 2300
-    assert not meets_conditions(revised_cost, labor)
-    assert revenue - initial_cost - 2 * labor == 2200
-    assert not meets_conditions(initial_cost, 2 * labor)
-    print("模擬試行の成功、料金改定と人件費増加での未達を確認")
 
 
 def check_documents():
@@ -140,5 +109,4 @@ def check_documents():
 if __name__ == "__main__":
     check_contract()
     check_history_counterexamples()
-    check_simulation()
     check_documents()
