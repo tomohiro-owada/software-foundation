@@ -62,7 +62,11 @@ def check_history(run):
         assert decision["Context版"] in context_versions
         assert decision["Goal版"] == run["Goal"]["版"]
         assert decision["合意版"] == run["合意"]["版"]
-    assert run["引継ぎ"]["Context版"] == run["Context"]["版"]
+        for review_name in ("独立レビュー", "Context付きレビュー"):
+            assert set(decision[review_name]["根拠"]) <= evidence_ids, "レビューの根拠が存在しない"
+    for record in ("Goal", "Context", "合意"):
+        assert run["引継ぎ"][record + "版"] == run[record]["版"], f"引継ぎの{record}版が現行版と異なる"
+
 
 def parse_time(value):
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -73,22 +77,31 @@ def check_history_counterexamples():
     run["履歴"][0]["時刻"] = "2026-11-01T13:00:00+02:00"
     check_history(run)
     run["履歴"][0]["時刻"] = "2026-11-01T08:00:00-05:00"
-    try:
-        check_history(run)
-    except AssertionError as error:
-        assert str(error) == "履歴が時刻順でない"
-    else:
-        raise AssertionError("時刻逆転を拒否しなかった")
+    expect_invalid_history(run, "履歴が時刻順でない")
 
     run = load("examples/contract-run.json")
     run["判断"][0]["候補"][1]["ID"] = run["判断"][0]["候補"][2]["ID"]
     run["判断"][0]["採用"] = run["判断"][0]["候補"][2]["ID"]
+    expect_invalid_history(run, "候補IDが重複")
+
+    original = load("examples/contract-run.json")
+    for record in ("Goal", "Context", "合意"):
+        run = copy.deepcopy(original)
+        run["引継ぎ"][record + "版"] = "存在しない版"
+        expect_invalid_history(run, f"引継ぎの{record}版が現行版と異なる")
+    for review_name in ("独立レビュー", "Context付きレビュー"):
+        run = copy.deepcopy(original)
+        run["判断"][0][review_name]["根拠"] = ["存在しない証拠"]
+        expect_invalid_history(run, "レビューの根拠が存在しない")
+
+
+def expect_invalid_history(run, expected):
     try:
         check_history(run)
     except AssertionError as error:
-        assert str(error) == "候補IDが重複"
+        assert str(error) == expected
     else:
-        raise AssertionError("候補IDの重複を拒否しなかった")
+        raise AssertionError(f"拒否されるべき履歴が通過: {expected}")
 
 
 def check_documents():
