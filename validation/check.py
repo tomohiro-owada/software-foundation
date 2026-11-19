@@ -162,11 +162,13 @@ def check_execution_authorization(run):
 
 
 def parse_time(value):
-    instant = datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
-    fraction = re.search(r"\.([0-9]+)", value)
-    # datetime が保持できる6桁より後も、同じ時刻の比較に使う。
-    remaining = fraction[1][6:].rstrip("0") if fraction else ""
-    return instant, remaining
+    normalized = value.upper().replace("Z", "+00:00")
+    fraction = re.search(r"\.([0-9]+)", normalized)
+    if fraction is None:
+        return datetime.fromisoformat(normalized), ""
+    whole_seconds = normalized[:fraction.start()] + normalized[fraction.end():]
+    # 末尾のゼロを取り除けば、同じ秒の小数部は文字列順で比較できる。
+    return datetime.fromisoformat(whole_seconds), fraction[1].rstrip("0")
 
 
 def check_history_counterexamples():
