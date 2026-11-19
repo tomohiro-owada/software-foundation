@@ -921,6 +921,55 @@
           "type": "string",
           "minLength": 1
         },
+        "再開時照合": {
+          "type": "object",
+          "properties": {
+            "照合時刻": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "必要費用": {
+              "type": "number",
+              "minimum": 0
+            },
+            "残予算": {
+              "type": "number"
+            },
+            "費用単位": {
+              "type": "string",
+              "minLength": 1
+            },
+            "必要工数": {
+              "type": "string",
+              "minLength": 1
+            },
+            "完了見込": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "提供期限": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "判定": {
+              "enum": [
+                "復帰",
+                "保留"
+              ]
+            }
+          },
+          "required": [
+            "照合時刻",
+            "必要費用",
+            "残予算",
+            "費用単位",
+            "必要工数",
+            "完了見込",
+            "提供期限",
+            "判定"
+          ],
+          "additionalProperties": false
+        },
         "評価保留": {
           "type": "object",
           "properties": {
