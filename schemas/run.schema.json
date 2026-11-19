@@ -1,0 +1,1034 @@
+{
+  "type": "object",
+  "properties": {
+    "契約版": {
+      "const": "0.1"
+    },
+    "区分": {
+      "enum": [
+        "実運用",
+        "模擬"
+      ]
+    },
+    "責任AI": {
+      "type": "object",
+      "properties": {
+        "名称": {
+          "type": "string",
+          "minLength": 1
+        },
+        "企業": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "名称",
+        "企業"
+      ],
+      "additionalProperties": false
+    },
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "課題": {
+          "type": "string",
+          "minLength": 1
+        },
+        "対象": {
+          "type": "string",
+          "minLength": 1
+        },
+        "成功条件": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "版",
+        "課題",
+        "対象",
+        "成功条件"
+      ],
+      "additionalProperties": false
+    },
+    "Context": {
+      "type": "object",
+      "properties": {
+        "版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "事実": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "非機能要件": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "事実": {
+                "type": "string",
+                "minLength": 1
+              },
+              "影響": {
+                "type": "string",
+                "minLength": 1
+              },
+              "条件": {
+                "type": "string",
+                "minLength": 1
+              },
+              "検証": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "事実",
+              "影響",
+              "条件",
+              "検証"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "版",
+        "事実",
+        "非機能要件"
+      ],
+      "additionalProperties": false
+    },
+    "合意": {
+      "type": "object",
+      "properties": {
+        "版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "承認者": {
+          "type": "string",
+          "minLength": 1
+        },
+        "権限": {
+          "type": "string",
+          "minLength": 1
+        },
+        "上限": {
+          "type": "string",
+          "minLength": 1
+        },
+        "期限": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "版",
+        "承認者",
+        "権限",
+        "上限",
+        "期限"
+      ],
+      "additionalProperties": false
+    },
+    "測定": {
+      "type": "object",
+      "properties": {
+        "事前確定": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "基準": {
+          "type": "string",
+          "minLength": 1
+        },
+        "方法": {
+          "type": "string",
+          "minLength": 1
+        },
+        "期間": {
+          "type": "string",
+          "minLength": 1
+        },
+        "撤退": {
+          "type": "string",
+          "minLength": 1
+        },
+        "反実仮想": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "事前確定",
+        "基準",
+        "方法",
+        "期間",
+        "撤退",
+        "反実仮想"
+      ],
+      "additionalProperties": false
+    },
+    "判断": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "minLength": 1
+          },
+          "重要": {
+            "type": "boolean"
+          },
+          "Goal版": {
+            "type": "string",
+            "minLength": 1
+          },
+          "Context版": {
+            "type": "string",
+            "minLength": 1
+          },
+          "合意版": {
+            "type": "string",
+            "minLength": 1
+          },
+          "候補": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "種類": {
+                  "enum": [
+                    "不作為",
+                    "施策"
+                  ]
+                },
+                "案": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "期待効果": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "費用": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "リスク": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "不作為の損失": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "ID",
+                "種類",
+                "案",
+                "期待効果",
+                "費用",
+                "リスク",
+                "不作為の損失"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 2,
+            "contains": {
+              "properties": {
+                "種類": {
+                  "const": "不作為"
+                }
+              }
+            }
+          },
+          "採用": {
+            "type": "string",
+            "minLength": 1
+          },
+          "仮説": {
+            "type": "string",
+            "minLength": 1
+          },
+          "比較": {
+            "type": "string",
+            "minLength": 1
+          },
+          "迷い": {
+            "type": "string",
+            "minLength": 1
+          },
+          "根拠": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "再評価条件": {
+            "type": "string",
+            "minLength": 1
+          },
+          "独立レビュー": {
+            "type": "object",
+            "properties": {
+              "状態": {
+                "enum": [
+                  "実施",
+                  "未実施"
+                ]
+              },
+              "企業": {
+                "type": "string",
+                "minLength": 1
+              },
+              "モデル": {
+                "type": "string",
+                "minLength": 1
+              },
+              "共有範囲": {
+                "type": "string",
+                "minLength": 1
+              },
+              "結果": {
+                "type": "string",
+                "minLength": 1
+              },
+              "根拠": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "状態",
+              "企業",
+              "モデル",
+              "共有範囲",
+              "結果",
+              "根拠"
+            ],
+            "additionalProperties": false
+          },
+          "Context付きレビュー": {
+            "type": "object",
+            "properties": {
+              "状態": {
+                "enum": [
+                  "実施",
+                  "未実施"
+                ]
+              },
+              "企業": {
+                "type": "string",
+                "minLength": 1
+              },
+              "モデル": {
+                "type": "string",
+                "minLength": 1
+              },
+              "共有範囲": {
+                "type": "string",
+                "minLength": 1
+              },
+              "結果": {
+                "type": "string",
+                "minLength": 1
+              },
+              "根拠": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "状態",
+              "企業",
+              "モデル",
+              "共有範囲",
+              "結果",
+              "根拠"
+            ],
+            "additionalProperties": false
+          },
+          "裁定": {
+            "type": "string",
+            "minLength": 1
+          },
+          "状態": {
+            "enum": [
+              "提案",
+              "保留",
+              "実行可"
+            ]
+          },
+          "実行結果": {
+            "type": "string",
+            "minLength": 1
+          },
+          "Goalへの寄与": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "ID",
+          "重要",
+          "Goal版",
+          "Context版",
+          "合意版",
+          "候補",
+          "採用",
+          "仮説",
+          "比較",
+          "迷い",
+          "根拠",
+          "再評価条件",
+          "独立レビュー",
+          "Context付きレビュー",
+          "裁定",
+          "状態",
+          "実行結果",
+          "Goalへの寄与"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "重要": {
+                  "const": true
+                },
+                "状態": {
+                  "const": "実行可"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "独立レビュー": {
+                  "properties": {
+                    "状態": {
+                      "const": "実施"
+                    },
+                    "根拠": {
+                      "minItems": 1
+                    }
+                  }
+                },
+                "Context付きレビュー": {
+                  "properties": {
+                    "状態": {
+                      "const": "実施"
+                    },
+                    "根拠": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 0
+    },
+    "証拠": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "minLength": 1
+          },
+          "種類": {
+            "enum": [
+              "実測",
+              "資料",
+              "模擬"
+            ]
+          },
+          "出典": {
+            "type": "string",
+            "minLength": 1
+          },
+          "取得": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "対象": {
+            "type": "string",
+            "minLength": 1
+          },
+          "方法": {
+            "type": "string",
+            "minLength": 1
+          },
+          "結果": {
+            "type": "string",
+            "minLength": 1
+          },
+          "鮮度": {
+            "type": "string",
+            "minLength": 1
+          },
+          "信頼性": {
+            "type": "string",
+            "minLength": 1
+          },
+          "関連性": {
+            "type": "string",
+            "minLength": 1
+          },
+          "再現性": {
+            "type": "string",
+            "minLength": 1
+          },
+          "制約": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "ID",
+          "種類",
+          "出典",
+          "取得",
+          "対象",
+          "方法",
+          "結果",
+          "鮮度",
+          "信頼性",
+          "関連性",
+          "再現性",
+          "制約"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "履歴": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "時刻": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "前": {
+            "enum": [
+              "準備",
+              "開始",
+              "調査",
+              "意思決定",
+              "実行",
+              "検証",
+              "運用",
+              "改善",
+              "失敗",
+              "相談待ち",
+              "中断",
+              "再開"
+            ]
+          },
+          "後": {
+            "enum": [
+              "準備",
+              "開始",
+              "調査",
+              "意思決定",
+              "実行",
+              "検証",
+              "運用",
+              "改善",
+              "失敗",
+              "相談待ち",
+              "中断",
+              "再開"
+            ]
+          },
+          "理由": {
+            "type": "string",
+            "minLength": 1
+          },
+          "根拠": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "時刻",
+          "前",
+          "後",
+          "理由",
+          "根拠"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "準備"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "開始",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "開始"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "準備",
+                    "調査",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "調査"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "意思決定",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "意思決定"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "実行",
+                    "調査",
+                    "運用",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "実行"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "検証",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "検証"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "運用",
+                    "実行",
+                    "調査",
+                    "改善",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "運用"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "改善",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "改善"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "調査",
+                    "運用",
+                    "相談待ち",
+                    "中断",
+                    "失敗"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "失敗"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "準備",
+                    "開始",
+                    "調査",
+                    "意思決定",
+                    "実行",
+                    "検証",
+                    "運用",
+                    "改善",
+                    "相談待ち",
+                    "中断"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "相談待ち"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "再開",
+                    "中断"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "中断"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "再開"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "前": {
+                  "const": "再開"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "後": {
+                  "enum": [
+                    "準備",
+                    "開始",
+                    "調査",
+                    "意思決定",
+                    "実行",
+                    "検証",
+                    "運用",
+                    "改善",
+                    "相談待ち",
+                    "中断"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 1
+    },
+    "現在": {
+      "enum": [
+        "準備",
+        "開始",
+        "調査",
+        "意思決定",
+        "実行",
+        "検証",
+        "運用",
+        "改善",
+        "失敗",
+        "相談待ち",
+        "中断",
+        "再開"
+      ]
+    },
+    "引継ぎ": {
+      "type": "object",
+      "properties": {
+        "最終操作": {
+          "type": "string",
+          "minLength": 1
+        },
+        "副作用": {
+          "type": "string",
+          "minLength": 1
+        },
+        "Goal版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "Context版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "合意版": {
+          "type": "string",
+          "minLength": 1
+        },
+        "次手": {
+          "type": "string",
+          "minLength": 1
+        },
+        "責任者": {
+          "type": "string",
+          "minLength": 1
+        },
+        "復帰先": {
+          "enum": [
+            "準備",
+            "開始",
+            "調査",
+            "意思決定",
+            "実行",
+            "検証",
+            "運用",
+            "改善",
+            "失敗",
+            "相談待ち",
+            "中断",
+            "再開"
+          ]
+        },
+        "再開条件": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "最終操作",
+        "副作用",
+        "Goal版",
+        "Context版",
+        "合意版",
+        "次手",
+        "責任者",
+        "復帰先",
+        "再開条件"
+      ],
+      "additionalProperties": false
+    },
+    "旧Context": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "版": {
+            "type": "string",
+            "minLength": 1
+          },
+          "事実": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "非機能要件": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "事実": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "影響": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "条件": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "検証": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "事実",
+                "影響",
+                "条件",
+                "検証"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "版",
+          "事実",
+          "非機能要件"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "契約版",
+    "区分",
+    "責任AI",
+    "Goal",
+    "Context",
+    "合意",
+    "測定",
+    "判断",
+    "証拠",
+    "履歴",
+    "現在",
+    "引継ぎ",
+    "旧Context"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Software Foundation 実行記録",
+  "description": "開始判定から継続運用までの記録。開始前の聞き取りは準備メモとして別途保持する。"
+}
