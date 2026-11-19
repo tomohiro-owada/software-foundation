@@ -13,6 +13,10 @@ if not __debug__:
     raise SystemExit("検証にはアサーションが必要です。Pythonの最適化を無効にしてください。")
 
 
+if "date-time" not in Draft202012Validator.FORMAT_CHECKER.checkers:
+    raise SystemExit("日時の形式検査が必要です。jsonschema[format] を用意してください。")
+
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "8ad57cf750f7ef905452df1549a4b60736496f1c"
 
