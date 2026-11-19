@@ -1,4 +1,5 @@
 """仕様のサンプルに対する再検証。実行環境の依存は jsonschema のみ。"""
+import argparse
 import copy
 import json
 import re
@@ -6,7 +7,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, ValidationError
 
 if not __debug__:
     raise SystemExit("検証にはアサーションが必要です。Pythonの最適化を無効にしてください。")
@@ -297,9 +298,34 @@ def check_documents():
     print("基礎7文書の原文一致と相対リンクを確認")
 
 
+def check_local_record(path):
+    schema = load("schemas/run.schema.json")
+    validator = Draft202012Validator(
+        schema, format_checker=Draft202012Validator.FORMAT_CHECKER
+    )
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        validator.validate(record)
+        check_history(record)
+    except ValidationError as error:
+        location = "/".join(str(part) for part in error.absolute_path) or "ルート"
+        raise SystemExit(f"構造が不適合: {location} ({error.validator})") from None
+    except AssertionError as error:
+        raise SystemExit(f"履歴または参照が不適合: {error or '状態・版・根拠を確認'}") from None
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"記録の読み取りまたは解析に失敗: {type(error).__name__}") from None
+    print("実行記録の構造と自動検査の対象となる条件を確認")
+
+
 if __name__ == "__main__":
-    check_contract()
-    check_history_counterexamples()
-    check_execution_counterexamples()
-    check_exception_transitions()
-    check_documents()
+    parser = argparse.ArgumentParser(description="実行記録の検査")
+    parser.add_argument("記録", nargs="?", type=Path, help="検査するJSONファイル")
+    record_path = parser.parse_args().記録
+    if record_path is None:
+        check_contract()
+        check_history_counterexamples()
+        check_execution_counterexamples()
+        check_exception_transitions()
+        check_documents()
+    else:
+        check_local_record(record_path)
